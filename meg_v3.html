@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MEG</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--ink:#0f172a;--muted:#667085;--line:#e3e7ee;--red:#b71c1c;--blue:#2563eb;--ok:#16a34a;--warn:#d97706;--r:12px;
+font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);padding:24px}
+.container{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.topo{border-bottom:2px solid var(--red);padding-bottom:6px}
+.topo h1{margin:0;font-size:22px;color:var(--red)} .topo p{margin:2px 0 0;font-size:13px;color:var(--red)}
+.step{display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;letter-spacing:.3px;margin-bottom:14px}
+.step i{font-style:normal;width:22px;height:22px;border:1px solid #cbd2dc;border-radius:50%;display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.full{grid-column:1/-1}
+label{display:block;font-weight:700;font-size:13px;margin-bottom:8px}
+.hint{color:var(--muted);font-size:12px;margin-top:6px}
+select,input[type=text],input[type=date],input[type=time],textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;font:inherit;font-size:14px;outline:none}
+select:focus,input:focus,textarea:focus,.dd-toggle:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+textarea{min-height:100px;resize:vertical}
+.auto-ok{border-color:var(--ok)!important;background:#f3fbf6!important}
+.auto-miss,.invalid{border-color:var(--warn)!important;background:#fffaf0!important}
+.invalid{border-color:#dc2626!important}
+.dd{position:relative;user-select:none}
+.dd-toggle{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:14px}
+.dd-panel{position:absolute;z-index:30;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;box-shadow:0 8px 24px rgba(2,6,23,.1);max-height:280px;overflow:auto}
+.dd-search{width:100%;padding:8px;margin-bottom:8px;border-radius:8px;border:1px solid var(--line)}
+.checkbox-grid{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-item{display:flex;align-items:center;background:#fff;padding:6px 8px;border-radius:8px;border:1px solid #eef2f7;font-size:13px}
+.checkbox-item label{margin:0;font-weight:500;cursor:pointer}
+.actions{display:flex;gap:12px}
+button{background:var(--blue);color:#fff;border:0;padding:10px 16px;border-radius:10px;cursor:pointer;font:inherit;font-size:14px;font-weight:700}
+button.secondary{background:#fff;color:var(--muted);border:1px solid var(--line)}
+button.mini{padding:5px 10px;font-size:12px;background:#fff;color:var(--blue);border:1px solid #c7d6fb}
+.lab{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.lab label{margin:0}
+.solar{font-weight:800;color:#fff;background:#ba3511;padding:12px 16px;border-radius:12px;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px}
+.nota-box{width:100%;min-height:200px;padding:16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;line-height:1.6;overflow-x:auto}
+/* importador */
+#drop{border:1.5px dashed #cbd2dc;border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;color:#344054;font-size:14px;transition:.15s}
+#drop:hover,#drop:focus,#drop.over{border-color:var(--blue);background:#f5f8ff;outline:none}
+#drop small{display:block;color:#98a2b3;font-size:12px;margin-top:6px}
+#drop svg{width:22px;height:22px;stroke:#98a2b3;margin-bottom:8px}
+#imp-status{margin-top:12px;font-size:13px;display:none}
+#bar{height:4px;background:#e5e9f0;border-radius:4px;margin-top:8px;overflow:hidden}#bar b{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}
+.imp-row{display:flex;gap:14px;align-items:flex-start}.imp-row img{max-width:150px;max-height:90px;border:1px solid var(--line);border-radius:6px}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;margin:2px 4px 2px 0}
+.chip.ok{background:#e8f6ee;color:#146c37}.chip.miss{background:#fff3df;color:#9a5b00}
+details{margin-top:12px;font-size:13px}summary{cursor:pointer;color:var(--muted)}
+#megTexto{margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px;min-height:120px}
+#erros{display:none;margin-top:14px;padding:10px 14px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px}
+#thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.thumb-i{position:relative;display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 28px 6px 6px;max-width:260px;background:#fafbfd}
+.thumb-i img{width:64px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.thumb-i .tn{display:flex;flex-direction:column;font-size:12px;min-width:0}.thumb-i .tn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
+.thumb-i .tn b{font-weight:600;color:var(--muted)}.thumb-i .tn b.ok{color:#146c37}.thumb-i .tn b.erro{color:#b91c1c}.thumb-i .tn b.lendo{color:var(--blue)}
+.thumb-i .rm{position:absolute;top:2px;right:2px;padding:0 7px;line-height:20px;font-size:14px}
+#erros.aviso{background:#fffbeb;border-color:#fde68a;color:#92400e}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;display:none;z-index:99}
+.credito{color:#9aa3b2;font-size:10px;margin:0;text-align:center}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.actions{flex-direction:column}.actions button{width:100%}.imp-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="card topo"><h1>MEG</h1><p>HITSS <strong>2026</strong></p></div>
+
+  <!-- 1 - IMPORTAR PEDIDO MEG (print) -->
+  <div class="card" id="importador">
+    <div class="step"><i>1</i>IMPORTAR PEDIDO MEG</div>
+    <div id="drop" tabindex="0" role="button" aria-label="Carregar prints do pedido MEG">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L8 8m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <div>Cole o print (Ctrl+V), arraste ou clique para carregar uma ou várias imagens (.png, .jpg)</div>
+      <small>lê o pedido MEG automaticamente e preenche o formulário abaixo · várias imagens do mesmo pedido são combinadas</small>
+    </div>
+    <input id="arquivo" type="file" accept="image/*" multiple hidden/>
+    <div id="thumbs"></div>
+    <div id="imp-status"></div>
+    <details><summary>Colar texto do MEG / ver texto lido</summary>
+      <textarea id="megTexto" placeholder="Cole aqui o texto do pedido MEG (ou corrija o texto lido do print) e clique em Preencher."></textarea>
+      <div class="actions" style="margin-top:8px"><button type="button" class="mini" id="btnTexto">Preencher a partir do texto</button><button type="button" class="mini" id="btnLimparImgs">Remover todas as imagens</button></div>
+    </details>
+  </div>
+
+  <form id="mainForm" autocomplete="off" onsubmit="return false;" style="display:contents">
+
+  <!-- 2 - DADOS DO EVENTO -->
+  <div class="card">
+    <div class="step"><i>2</i>DADOS DO EVENTO</div>
+    <div class="grid">
+      <div><label for="falha">FALHA</label>
+        <select id="falha"><option value="">Selecione</option><option>Interrupção</option><option>Degradação</option></select></div>
+      <div><label for="servicos">SERVIÇOS</label>
+        <select id="servicos"><option value="">Selecione</option><option>Voz/Dados</option><option>Dados</option><option>Voz</option></select></div>
+      <div class="full"><label for="tecnologia">TECNOLOGIA</label>
+        <select id="tecnologia"><option value="">Selecione</option><option>2G, 3G, 4G e 5G</option><option>2G, 3G e 4G</option><option>2G e 3G</option><option>2G e 4G</option><option>3G e 4G</option><option>5G</option><option>4G</option><option>3G</option><option>2G</option></select></div>
+      <div><label for="regional">REGIONAL</label>
+        <select id="regional"><option value="">Selecione</option><option>SP</option><option>RJ/ES</option><option>RS</option><option>CO</option><option>NO</option><option>PR/SC</option><option>NE</option><option>MG</option><option>BA/SE</option><option>NACIONAL</option></select><div class="hint" id="regHint"></div></div>
+      <div class="full"><label for="chamado">CHAMADO</label>
+        <input id="chamado" type="text" placeholder="Ex.: 4346359, 4346372"/></div>
+      <div><label for="data">DATA</label><input id="data" type="date"/></div>
+      <div><label for="hora">HORA</label><input id="hora" type="time"/></div>
+      <div><label for="cidade">CIDADE</label><input id="cidade" type="text"/></div>
+      <div class="full"><label>UF</label>
+        <div class="dd" id="ufDropdown">
+          <div class="dd-toggle" id="ufToggle" tabindex="0" role="button" aria-expanded="false"><span id="ufSelectedText">Selecione</span><span style="opacity:.6">▾</span></div>
+          <div class="dd-panel" id="ufPanel" style="display:none;">
+            <input class="dd-search" id="ufSearch" placeholder="Pesquisar UF (ex.: SP)"/>
+            <div class="checkbox-grid" id="ufList"></div>
+            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+              <button type="button" id="ufApply" style="background:#10b981;padding:8px 10px">Aplicar</button>
+              <button type="button" id="ufClear" style="background:#ef4444;padding:8px 10px">Limpar</button>
+            </div>
+          </div>
+        </div></div>
+      <div><label>DDD</label>
+        <div class="dd" id="dddDropdown">
+          <div class="dd-toggle" id="dddToggle" tabindex="0" role="button" aria-expanded="false"><span id="dddSelectedText">Selecione</span><span style="opacity:.6">▾</span></div>
+          <div class="dd-panel" id="dddPanel" style="display:none;">
+            <input class="dd-search" id="dddSearch" placeholder="Pesquisar DDD"/>
+            <div class="checkbox-grid" id="dddList"></div>
+            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+              <button type="button" id="dddApply" style="background:#10b981;padding:8px 10px">Aplicar</button>
+              <button type="button" id="dddClear" style="background:#ef4444;padding:8px 10px">Limpar</button>
+            </div>
+          </div>
+        </div></div>
+      <div class="full"><label for="impacto">IMPACTO</label>
+        <select id="impacto"><option value="">Selecione</option><option>N1</option><option>N2</option><option>N3</option></select></div>
+      <div class="full actions">
+        <button id="gerarBtn" type="button">Gerar</button>
+        <button id="limparBtn" type="button" class="secondary">Limpar</button>
+      </div>
+    </div>
+    <div id="erros" role="alert"></div>
+  </div>
+
+  <!-- 3 - SCRIPT PUBLICAÇÃO SOLAR -->
+  <div class="card">
+    <div class="solar">SCRIPT PUBLICAÇÃO SOLAR</div>
+    <div class="grid">
+      <div class="full"><div class="lab"><label for="ret_titulo">TÍTULO</label><button type="button" class="mini" data-copy="ret_titulo">Copiar</button></div>
+        <input id="ret_titulo" type="text" readonly/></div>
+      <div class="full"><div class="lab"><label>NOTA</label><button type="button" class="mini" data-copy="ret_nota">Copiar</button></div>
+        <div id="ret_nota" class="nota-box" aria-live="polite"></div></div>
+      <div class="full"><div class="lab"><label for="ret_cadastro">CADASTRO</label><button type="button" class="mini" data-copy="ret_cadastro">Copiar</button></div>
+        <textarea id="ret_cadastro" readonly></textarea></div>
+    </div>
+  </div>
+
+  <!-- ===== BLOCO TRAVADO: MOLDE DE E-MAIL (NÃO ALTERAR) ===== -->
+  <div class="card" id="bloco-mailing"><div class="grid">
+
+			<header style="border-bottom: 2px solid #b71c1c; padding-bottom: 6px; margin-bottom: 12px;">
+			  <p style="color:#b71c1c; margin:0;">MAGALU E NUBANK <strong>MAILING</strong></p>
+			</header>
+
+		<div class="full" style="margin-top:10px; font-weight:800; color:#fff; background:#fff; padding:1px 1px; border-radius:1px; text-align:center; text-transform:uppercase; letter-spacing:1px;">MAGALU E NUBANK</div>
+
+		 <div>
+		  <label for="magalu_para">PARA MAGALU</label>
+		  <input id="magalu_para" type="text" />
+		</div>
+		<div>
+		  <label for="magalu_cc">CÓPIA MAGALU</label>
+		  <input id="magalu_cc" type="text" />
+		</div>
+
+		<div>
+		  <label for="nubank_para">PARA NUBANK</label>
+		  <input id="nubank_para" type="text" />
+		</div>
+		<div>
+		  <label for="nubank_cc">CÓPIA NUBANK</label>
+		  <input id="nubank_cc" type="text" />
+		</div>
+
+		<!-- MAILING URA -->
+
+		<div class="full" style="margin-top:10px; font-weight:800; color:#fff; background:#fff; padding:12px 16px; border-radius:12px; text-align:center; text-transform:uppercase; letter-spacing:1px;">EMAILS URA</div>
+
+			<header style="border-bottom: 2px solid #b71c1c; padding-bottom: 6px; margin-bottom: 12px;">
+			  <p style="color:#b71c1c; margin:0;">URA <strong>MAILING</strong></p>
+			</header>
+
+		<div class="full" style="margin-top:10px; font-weight:800; color:#fff; background:#fff; padding:1px 1px; border-radius:1px; text-align:center; text-transform:uppercase; letter-spacing:1px;">EMAILS URA</div>
+
+		   <div>
+		  <label for="ura_para">PARA URA</label>
+		  <input id="ura_para" type="text" readonly />
+		</div>
+		<div>
+		  <label for="ura_cc">CÓPIA URA</label>
+		  <input id="ura_cc" type="text" readonly />
+		 </div>
+        <div>
+          <label for="ura_titulo">TÍTULO E-MAIL</label>
+          <input id="ura_titulo" type="text" readonly />
+        </div>
+        <div>
+          <label for="ura_assunto">ASSUNTO E-MAIL</label>
+          <textarea id="ura_assunto" readonly></textarea>
+        </div>
+
+  </div></div>
+  <!-- ===== FIM DO BLOCO TRAVADO ===== -->
+
+  </form>
+  <p class="credito">⚙️ Desenvolvido por: <strong>Bruno Oliveira</strong></p>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ================= CONFIG (ajustes de negócio num lugar só) ================= */
+const CONFIG = {
+  APP_VERSION: '2.0',
+  CHAMADO_REMOVER_ZEROS: true,   // INC 000006202201 -> 6202201
+  OCR: { lang:'por', scriptUrl:'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js',
+         workerPath:null, corePath:null, langPath:null },   // preencher para rodar OCR 100% offline/interno
+  DB:  { enabled:false, baseUrl:'', timeoutMs:8000, endpoints:{ eventos:'/api/eventos', cidades:'/api/cidades' } }
+};
+const REGIONAIS = ['SP','RJ/ES','RS','CO','NO','PR/SC','NE','MG','BA/SE','NACIONAL'];
+/* Regionais (definição da operação: onde há clientes). Cada UF pertence a uma única regional. */
+const REGIONAL_UFS = {
+  'BA/SE': ['BA','SE'],
+  'CO':    ['AC','DF','GO','MT','MS','RO','TO'],
+  'MG':    ['MG'],
+  'NE':    ['AL','CE','PB','PE','PI','RN'],
+  'NO':    ['AP','AM','MA','PA','RR'],
+  'PR/SC': ['PR','SC'],
+  'RJ/ES': ['RJ','ES'],
+  'RS':    ['RS'],
+  'SP':    ['SP']
+};
+const UF_REGIONAL = {};
+Object.keys(REGIONAL_UFS).forEach(r=>REGIONAL_UFS[r].forEach(u=>UF_REGIONAL[u]=r));
+/* O 1º dígito do DDD acompanha a regional: 1X=SP, 2X=RJ/ES, 3X=MG, 4X=PR/SC, 5X=RS, 6X=CO, 7X=BA/SE, 8X=NE, 9X=NO */
+const DDD_DIGITO_REGIONAL = {'1':'SP','2':'RJ/ES','3':'MG','4':'PR/SC','5':'RS','6':'CO','7':'BA/SE','8':'NE','9':'NO'};
+const DDD_UF = {};
+[['SP','11 12 13 14 15 16 17 18 19'],['RJ','21 22 24'],['ES','27 28'],['MG','31 32 33 34 35 37 38'],['PR','41 42 43 44 45 46'],['SC','47 48 49'],
+ ['RS','51 53 54 55'],['DF','61'],['GO','62 64'],['TO','63'],['MT','65 66'],['MS','67'],['AC','68'],['RO','69'],['BA','71 73 74 75 77'],['SE','79'],
+ ['PE','81 87'],['AL','82'],['PB','83'],['RN','84'],['CE','85 88'],['PI','86 89'],['PA','91 93 94'],['AM','92 97'],['RR','95'],['AP','96'],['MA','98 99']
+].forEach(([uf,l])=>l.split(' ').forEach(d=>DDD_UF[d]=uf));
+/* SP: DDD 11 (Grande SP) x demais DDDs do estado */
+const SP_DDD_GRUPOS = {'Grande São Paulo':['11'],'Interior e litoral':['12','13','14','15','16','17','18','19']};
+const SP_REGIOES = {'campinas':'19','ribeirao preto':'16','sorocaba':'15','sao jose dos campos':'12','santos':'13','baixada santista':'13','sao paulo':'11'};
+/* Cidades de referência (corrige acento/erro de OCR e sugere UF/DDD). Quando houver banco, buscarCidade() complementa. */
+const CIDADES_REF = [
+ ['Rio Branco','AC','68'],['Maceió','AL','82'],['Macapá','AP','96'],['Manaus','AM','92'],['Salvador','BA','71'],['Fortaleza','CE','85'],['Brasília','DF','61'],
+ ['Vitória','ES','27'],['Goiânia','GO','62'],['São Luís','MA','98'],['Cuiabá','MT','65'],['Campo Grande','MS','67'],['Belo Horizonte','MG','31'],['Belém','PA','91'],
+ ['João Pessoa','PB','83'],['Curitiba','PR','41'],['Recife','PE','81'],['Teresina','PI','86'],['Rio de Janeiro','RJ','21'],['Natal','RN','84'],['Porto Alegre','RS','51'],
+ ['Porto Velho','RO','69'],['Boa Vista','RR','95'],['Florianópolis','SC','48'],['São Paulo','SP','11'],['Aracaju','SE','79'],['Palmas','TO','63'],
+ ['Campinas','SP','19'],['Ribeirão Preto','SP','16'],['Sorocaba','SP','15'],['São José dos Campos','SP','12'],['Santos','SP','13'],['Guarulhos','SP','11'],
+ ['Osasco','SP','11'],['Santo André','SP','11'],['São Bernardo do Campo','SP','11'],['Niterói','RJ','21'],['Uberlândia','MG','34'],['Londrina','PR','43'],
+ ['Joinville','SC','47'],['Caxias do Sul','RS','54'],['Parintins','AM','92'],['Santarém','PA','93'],['Marabá','PA','94'],['Imperatriz','MA','99'],
+ ['Patos de Minas','MG','34'],['Uberaba','MG','34'],['Montes Claros','MG','38'],['Juiz de Fora','MG','32'],['Contagem','MG','31'],['Betim','MG','31'],['Governador Valadares','MG','33'],['Ipatinga','MG','31'],['Poços de Caldas','MG','35'],['Divinópolis','MG','37'],['Varginha','MG','35'],['Pouso Alegre','MG','35'],['Sete Lagoas','MG','31'],['Teófilo Otoni','MG','33']
+];
+const ufArray=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','NACIONAL'];
+const dddArray=['11','12','13','14','15','16','17','18','19','21','22','24','27','28','31','32','33','34','35','37','38','41','42','43','44','45','46','47','48','49','51','53','54','55','61','62','63','64','65','66','67','68','69','71','73','74','75','77','79','81','82','83','84','85','86','87','88','89','91','92','93','94','95','96','97','98','99','1X','2X','3X','4X','5X','6X','7X','8X','9X'];
+const $=id=>document.getElementById(id);
+const state={meg:null,origem:'manual',ultimo:null};
+
+/* ================= Utilitários ================= */
+function splitComma(s){ if(!s) return []; return s.split(/[,;\n]+/).map(x=>x.trim()).filter(x=>x); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function joinWithE(arr){ if(!arr||arr.length===0) return ''; if(arr.length===1) return arr[0]; if(arr.length===2) return arr[0]+' e '+arr[1]; return arr.slice(0,-1).join(', ')+' e '+arr.slice(-1); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function norm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function mapFalhaToTerm(f){ if(f==='Interrupção') return 'Impossibilidade'; if(f==='Degradação') return 'Dificuldade'; return f||''; }
+function mapUFsToNames(ufs){ const m={'AC':'Acre','AL':'Alagoas','AP':'Amapá','AM':'Amazonas','BA':'Bahia','CE':'Ceará','DF':'Distrito Federal','ES':'Espírito Santo','GO':'Goiás','MA':'Maranhão','MT':'Mato Grosso','MS':'Mato Grosso do Sul','MG':'Minas Gerais','PA':'Pará','PB':'Paraíba','PR':'Paraná','PE':'Pernambuco','PI':'Piauí','RJ':'Rio de Janeiro','RN':'Rio Grande do Norte','RS':'Rio Grande do Sul','RO':'Rondônia','RR':'Roraima','SC':'Santa Catarina','SP':'São Paulo','SE':'Sergipe','TO':'Tocantins'}; return ufs.map(u=>m[u]||u); }
+function buildReturnSentence(term,servico,tecnologia,cidadeText,ufList){
+  const estadoPart=(ufList&&ufList.length)?' - '+joinWithE(ufList):'';
+  if(servico==='Dados') return `${term} para acessar a rede de dados ${tecnologia}: ${cidadeText||''}${estadoPart}`;
+  if(servico==='Voz') return `${term} para fazer/receber chamadas ${tecnologia}: ${cidadeText||''}${estadoPart}`;
+  return `${term} para fazer/receber chamadas e acessar a rede de dados ${tecnologia}: ${cidadeText||''}${estadoPart}`;
+}
+function buildImpactoSentence(term,servico){
+  if(servico==='Dados') return `${term} para acessar a rede de dados`;
+  if(servico==='Voz') return `${term} para fazer/receber chamadas`;
+  return `${term} para fazer/receber chamadas e acessar a rede de dados`;
+}
+function toTitleCase(str){
+  return String(str).toLowerCase().trim().split(/\s+/).map((p,i)=>{
+    if(!p) return p; if(i!==0&&['e','de','da','do','das','dos'].includes(p)) return p;
+    return p.charAt(0).toUpperCase()+p.slice(1);
+  }).join(' ');
+}
+function formatCidade(raw){ return joinWithE(splitComma(raw).map(toTitleCase)); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>t.style.display='none',2600); }
+
+/* Previsão: base 100% no AGORA (regra mantida). Aceita data base para teste. */
+function calcularPrevisao(base){
+  const agora=base||new Date(), h=agora.getHours();
+  if(h>=17){ const n=new Date(agora); n.setDate(n.getDate()+1); n.setHours(7,0,0,0); return n; }
+  const mapa={5:13,6:13,7:14,8:15,9:16,10:17,11:18,12:19,13:19,14:20,15:21,16:21};
+  const p=new Date(agora); p.setHours(mapa[h]!==undefined?mapa[h]:19,0,0,0); return p;
+}
+
+/* ================= Multi-select (UF / DDD) ================= */
+const multi={};
+function initMulti(key,arr){
+  const list=$(key+'List'), txt=$(key+'SelectedText'), panel=$(key+'Panel'), toggle=$(key+'Toggle');
+  list.innerHTML='';
+  arr.forEach(v=>{ const d=document.createElement('div'); d.className='checkbox-item';
+    d.innerHTML=`<label><input type="checkbox" value="${esc(v)}"/> ${esc(v)}</label>`; list.appendChild(d); });
+  const boxes=()=>[...list.querySelectorAll('input')];
+  const get=()=>boxes().filter(i=>i.checked).map(i=>i.value);
+  const refresh=()=>{ const c=get(); txt.textContent=c.length?joinWithE(c):'Selecione'; toggle.classList.remove('auto-ok','auto-miss'); };
+  const open=o=>{ panel.style.display=o?'block':'none'; toggle.setAttribute('aria-expanded',o); if(o) $(key+'Search').focus(); };
+  toggle.addEventListener('click',()=>open(panel.style.display!=='block'));
+  toggle.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(panel.style.display!=='block'); }});
+  list.addEventListener('change',refresh);
+  $(key+'Apply').addEventListener('click',()=>{ refresh(); open(false); });
+  $(key+'Clear').addEventListener('click',()=>{ boxes().forEach(i=>i.checked=false); refresh(); });
+  $(key+'Search').addEventListener('input',e=>{ const v=e.target.value.toLowerCase();
+    list.querySelectorAll('.checkbox-item').forEach(it=>it.style.display=it.innerText.toLowerCase().includes(v)?'flex':'none'); });
+  multi[key]={get,refresh,open,toggle,set(vals){ boxes().forEach(i=>i.checked=vals.includes(i.value)); refresh(); }};
+}
+initMulti('uf',ufArray); initMulti('ddd',dddArray);
+document.addEventListener('click',e=>{ Object.values(multi).forEach(m=>{ if(!m.toggle.parentElement.contains(e.target)) m.open(false); }); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') Object.values(multi).forEach(m=>m.open(false)); });
+
+/* ================= Gerar Nota ================= */
+function generateNotaHTML(f){
+  const term=mapFalhaToTerm(f.falha);
+  const retornoSint=buildReturnSentence(term,f.servicos,f.tecnologia,f.cidadeDisplay,f.ufAbbrList);
+  const publico='Clientes Claro Cartão, Claro Controle, Claro Conta, Claro Empresa, Banda Larga Cartão, Banda Larga Conta, Banda Larga Empresa e Claro Flex.';
+  const osText=f.chamadosArr.join(', ');
+  const localidadeReal=formatCidade(f.cidadeRaw||'');
+  const scriptFalha=`Sr. [nome do cliente], verifiquei em meu sistema que já temos uma equipe tratando a falha na localidade para regularizar a cobertura o quanto antes. Peço desculpas pelo transtorno e agradeço a sua compreensão.`;
+  const sugestao=`Se ele é ...
+Ofereça...
+Pelo sistema ...
+Sugestão de Script
+Claro Flex
+Bônus 2GB
+CSP -> Informações do Cliente -> Comprar pacotes adicionais -> Resgatar Cupom Inserir o cupom ATENDIMENTOFLEX_2
+Entendo seu descontentamento e reforço que a falha será solucionada até x horas.
+
+Neste caso, como forma de pedir desculpas, a Claro gostaria de lhe oferecer um bônus de 2GB, totalmente sem custo. O senhor aceita?`;
+  const estadoNames=mapUFsToNames(f.ufAbbrList), estadoDisplay=estadoNames.length?joinWithE(estadoNames):'';
+  const p=[];
+  p.push(`<div><strong>Ocorrência:</strong> ${esc(retornoSint)}.</div><br>`);
+  p.push(`<div><strong>Impacto:</strong> Clientes ${esc(f.tecnologia)} estão com ${esc(buildImpactoSentence(term,f.servicos))} e utilizar os demais serviços Claro.</div><br>`);
+  p.push(`<div><strong>Público Impactado:</strong> ${publico}</div><br>`);
+  p.push(`<div><strong>OS:</strong> ${esc(osText)}</div><br>`);
+  p.push(`<div><strong>Tecnologia:</strong> ${esc(f.tecnologia)}.</div><br>`);
+  p.push(`<div><strong>Regional:</strong> ${esc(f.regional)}</div>`);
+  p.push(`<div><strong>Estado:</strong> ${esc(estadoDisplay)}</div>`);
+  p.push(`<div><strong>Localidade:</strong> ${esc(localidadeReal)}</div><br>`);
+  p.push(`<div><strong>Ação do Atendimento:</strong> Informe o script abaixo e registre o protocolo indicado.</div><br>`);
+  p.push(`<div><strong>Script da FALHA de REDE:</strong> ${scriptFalha}</div><br>`);
+  p.push(`
+<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;">
+  <thead>
+    <tr>
+      <th>Se ele é ...</th>
+      <th>Ofereça...</th>
+      <th>Pelo sistema ...</th>
+      <th>Sugestão de Script</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Claro Flex</td>
+      <td>Bônus 2GB</td>
+      <td>CSP → Informações do Cliente → Comprar pacotes adicionais → Resgatar Cupom ATENDIMENTOFLEX_2</td>
+      <td>${sugestao.replace(/&/g,'&amp;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+`);
+  p.push(`
+<div><strong>REGISTRO:</strong></div><br>
+<div><strong>CLARO FLEX - PS8:</strong> Informação > Claro XXXX > Anormalidade Temporária > Rede e Cobertura > Status Procedente.</div><br>
+<div><strong>SOLAR:</strong> Jornada Informativa > informação > informações sobre rede e cobertura > Móvel.</div><br>
+<div><strong>IMPORTANTE:</strong> Registre corretamente no protocolo o número da OS referente à falha.</div>
+`);
+  return p.join("\n");
+}
+
+/* Gerar Mailing URA  (BLOCO TRAVADO: lógica original, não alterar) */
+function gerarMailingURA(fields) {
+
+    const dddSelected = fields.dddSelected || [];
+    const chamadosArr = fields.chamadosArr || [];
+    const retornoSint = fields.retornoSint || '';
+    const previsaoStr = fields.previsaoStr || '';
+
+    // 🔽 AGORA PREENCHE TUDO SOMENTE AO GERAR
+
+    document.getElementById("magalu_para").value = "magamais@magazineluiza.com.br";
+    document.getElementById("magalu_cc").value = "gestaoct@claro.com.br;Ronaldo.Disessa@claro.com.br";
+
+    document.getElementById("nubank_para").value = "nucel-alertas-rede@nubank.com.br";
+    document.getElementById("nubank_cc").value = "gestaoct@claro.com.br;Ronaldo.Disessa@claro.com.br";
+
+    document.getElementById("ura_para").value = "Control.MSO@claro.com.br";
+    document.getElementById("ura_cc").value = "bruno.santana.terceiros@claro.com.br;carla.lara@globalhitss.com.br;luana.cristina.terceiros@claro.com.br;washington.l.silva@globalhitss.com.br;julia.vicente.terceiros@claro.com.br";
+
+    const tituloEmail = `URA CN ${dddSelected.join(", ")} - INC: ${chamadosArr.join(", ")} | Publicação de URA`;
+
+    const assuntoTexto = `Falha: ${retornoSint}
+Previsão: ${previsaoStr}
+Status: Nota e URA Vigentes
+
+JIRA:`;
+
+    document.getElementById("ura_titulo").value = tituloEmail;
+    document.getElementById("ura_assunto").value = assuntoTexto;
+}
+
+/* ================= Gerar (função principal) ================= */
+function lerForm(){
+  return { falha:$('falha').value, servicos:$('servicos').value, tecnologia:$('tecnologia').value, regional:$('regional').value,
+    chamadoRaw:$('chamado').value, dataVal:$('data').value, horaVal:$('hora').value, cidadeRaw:$('cidade').value.trim(),
+    impacto:$('impacto').value, ufSelected:multi.uf.get(), dddSelected:multi.ddd.get() };
+}
+function mostrarErros(lista,ids){
+  document.querySelectorAll('.invalid').forEach(e=>e.classList.remove('invalid'));
+  const box=$('erros'); box.className='';
+  if(!lista.length){ box.style.display='none'; return; }
+  box.innerHTML='<strong>Corrija antes de gerar:</strong><br>'+lista.map(esc).join('<br>'); box.style.display='block';
+  ids.forEach(i=>$(i).classList.add('invalid')); $(ids[0]).focus();
+}
+function gerarRetorno(){
+  const v=lerForm(), erros=[], ids=[];
+  [['falha','FALHA'],['servicos','SERVIÇOS'],['tecnologia','TECNOLOGIA'],['regional','REGIONAL'],['chamado','CHAMADO'],['data','DATA'],['hora','HORA'],['impacto','IMPACTO']]
+    .forEach(([id,n])=>{ const val=id==='chamado'?v.chamadoRaw.trim():v[id==='data'?'dataVal':id==='hora'?'horaVal':id]; if(!val){ erros.push('Preencha '+n); ids.push(id); } });
+  const dt=new Date(`${v.dataVal}T${v.horaVal}`);
+  if(v.dataVal&&v.horaVal&&isNaN(dt)){ erros.push('Data/Hora inválida'); ids.push('data'); }
+  mostrarErros(erros,ids); if(erros.length) return;
+
+  const chamadosArr=[...new Set(splitComma(v.chamadoRaw))];
+  const cidadesArr=splitComma(v.cidadeRaw);
+  const cidadeDisplay=(cidadesArr.length>3)?'Várias Cidades':(formatCidade(v.cidadeRaw)||'');
+  const previsaoDt=calcularPrevisao();
+  const dataStr=`${pad2(dt.getDate())}/${pad2(dt.getMonth()+1)}/${dt.getFullYear()}`;
+  const horaStr=`${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+  const previsaoStr=`${pad2(previsaoDt.getDate())}/${pad2(previsaoDt.getMonth()+1)}/${previsaoDt.getFullYear()} ${pad2(previsaoDt.getHours())}:00`;
+  const termo=mapFalhaToTerm(v.falha);
+  const retornoSint=buildReturnSentence(termo,v.servicos,v.tecnologia,cidadeDisplay,v.ufSelected);
+
+  $('ret_titulo').value=retornoSint;
+  $('ret_cadastro').value=`${retornoSint} (CN: ${v.dddSelected.join(', ')})`;
+  $('ret_nota').innerHTML=generateNotaHTML({falha:v.falha,servicos:v.servicos,tecnologia:v.tecnologia,regional:v.regional,
+    chamadosArr,dataStr,horaStr,previsaoStr,cidadeDisplay,cidadeRaw:v.cidadeRaw,ufAbbrList:v.ufSelected});
+  gerarMailingURA({dddSelected:v.dddSelected,chamadosArr,cidadeDisplay,retornoSint,previsaoStr});
+
+  const avisos=[]; if(!v.ufSelected.length) avisos.push('UF'); if(!v.dddSelected.length) avisos.push('DDD'); if(!v.cidadeRaw) avisos.push('CIDADE');
+  conferirRegional(v);
+  toast(avisos.length?'Gerado. Atenção: '+avisos.join(', ')+' vazio(s)':'Gerado com sucesso');
+
+  const payload={ meg:state.meg, origem:state.origem, falha:v.falha, servicos:v.servicos, tecnologia:v.tecnologia, regional:v.regional, impacto:v.impacto,
+    chamados:chamadosArr, inicio:`${v.dataVal}T${v.horaVal}`, previsao:previsaoStr, cidades:cidadesArr, ufs:v.ufSelected, ddds:v.dddSelected,
+    titulo:retornoSint, criado_em:new Date().toISOString(), app_version:CONFIG.APP_VERSION };
+  state.ultimo=payload;
+  DataLayer.salvarEvento(payload).catch(e=>console.warn('[DB] não salvou:',e));
+}
+
+/* ================= Camada de dados (pronta p/ banco; desligada) ================= */
+const DataLayer={
+  on:()=>CONFIG.DB.enabled&&!!CONFIG.DB.baseUrl,
+  async _req(path,opt={}){
+    const c=new AbortController(), t=setTimeout(()=>c.abort(),CONFIG.DB.timeoutMs);
+    try{ const r=await fetch(CONFIG.DB.baseUrl+path,{headers:{'Content-Type':'application/json'},signal:c.signal,...opt});
+      if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); } finally{ clearTimeout(t); }
+  },
+  async salvarEvento(p){ if(!this.on()) return {skipped:true}; return this._req(CONFIG.DB.endpoints.eventos,{method:'POST',body:JSON.stringify(p)}); },
+  /* espera { uf, ddds:[], regional } ou null; usada só p/ completar campos vazios após importar */
+  async buscarCidade(nome){ if(!this.on()||!nome) return null; return this._req(CONFIG.DB.endpoints.cidades+'?nome='+encodeURIComponent(nome)); }
+};
+
+/* ================= Botões ================= */
+$('gerarBtn').addEventListener('click',gerarRetorno);
+$('limparBtn').addEventListener('click',()=>{
+  $('mainForm').reset(); multi.uf.set([]); multi.ddd.set([]);
+  ['ret_titulo','ret_cadastro','ura_titulo','ura_assunto'].forEach(i=>$(i).value='');
+  $('ret_nota').innerHTML=''; mostrarErros([],[]);
+  document.querySelectorAll('.auto-ok,.auto-miss').forEach(e=>e.classList.remove('auto-ok','auto-miss'));
+  state.meg=null; state.origem='manual'; $('imp-status').style.display='none'; $('megTexto').value=''; limparImagens(); mostrarHintRegional();
+});
+document.addEventListener('keydown',e=>{ if(e.ctrlKey&&e.key==='Enter') gerarRetorno(); });
+['falha','servicos','tecnologia','regional','chamado','data','hora','cidade','impacto'].forEach(id=>
+  $(id).addEventListener('input',()=>$(id).classList.remove('invalid','auto-ok','auto-miss')));
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{
+  const el=$(b.dataset.copy); let ok=false;
+  try{
+    if(el.tagName==='DIV'&&navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([el.innerHTML],{type:'text/html'}),'text/plain':new Blob([el.innerText],{type:'text/plain'})})]); ok=true;
+    } else if(el.value!==undefined){ await navigator.clipboard.writeText(el.value); ok=true; }
+  }catch(e){}
+  if(!ok){ const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); if(el.select) el.select(); ok=document.execCommand('copy'); s.removeAllRanges(); }
+  toast(ok?'Copiado':'Não foi possível copiar');
+}));
+
+/* ================= Leitura do pedido MEG: parser tolerante a erro de OCR ================= */
+const MEG_LABELS = {
+  evento:'Evento', inicio:'Inicio / Termino', criterio:'Criterio', servicos:'Servicos Afetados', bilhetes:'Bilhetes', descricao:'Descricao',
+  causa:'Causa', local:'Local da Falha', cluster:'Cluster', cidades:'Principais Localidades Afetadas', impacto:'Impacto', resp:'Responsavel pela Recuperacao',
+  status:'Status', centro:'Centro de Gerencia Responsavel', redes:'Redes Afetadas', dist:'Lista de Distribuicao'
+};
+const SO_LETRAS = s => norm(s).replace(/[^a-z]/g,'');
+function lev(a,b){
+  if(a===b) return 0; const m=a.length,n=b.length; if(!m||!n) return Math.max(m,n);
+  let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; }
+  return p[n];
+}
+const sim = (a,b)=>{ const L=Math.max(a.length,b.length); return L?1-lev(a,b)/L:0; };
+/* Descobre qual rótulo abre a linha, mesmo com letras trocadas pelo OCR ("Princioais Localidedes Afetadas") */
+function detectarRotulo(line){
+  const m = line.match(/^\W{0,3}([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ \/.\-]{2,60}?)\s*[:=;|\[\]]\s*(.*)$/);
+  const cands = [];
+  if(m) cands.push({pre:m[1], rest:m[2]});
+  // sem separador legível: tenta casar o começo da linha com cada rótulo
+  Object.entries(MEG_LABELS).forEach(([k,l])=>{ const n=SO_LETRAS(l).length; const w=line.replace(/[^A-Za-zÀ-ÿ ]/g,' '); 
+    const toks=w.split(/\s+/).filter(Boolean); let acc='',i=0; while(i<toks.length && SO_LETRAS(acc).length<n){ acc+=toks[i]; i++; }
+    if(acc) cands.push({pre:acc, rest:toks.slice(i).join(' ')+(line.includes(':')?line.slice(line.indexOf(':')+1):''), solto:true}); });
+  let best=null;
+  cands.forEach(c=>{ const p=SO_LETRAS(c.pre); if(p.length<3) return;
+    Object.entries(MEG_LABELS).forEach(([k,l])=>{ const s=sim(p,SO_LETRAS(l)); const lim=c.solto?0.8:0.66;
+      if(s>=lim && (!best||s>best.s)) best={k,s,rest:c.rest}; }); });
+  return best;
+}
+function segmentar(texto){
+  const lines=String(texto||'').replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(Boolean), out={}, ordem=[];
+  let atual=null;
+  lines.forEach(l=>{ const r=detectarRotulo(l);
+    if(r){ atual=r.k; if(out[atual]===undefined){ out[atual]=r.rest.trim(); ordem.push(atual); } else atual=null; }
+    else if(/^\W{0,3}[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ \/.\-]{2,50}\s*[:=]\s*\S/.test(l)){   // rótulo ilegível pelo OCR
+      if((atual==='local'||atual==='cluster') && out.cidades===undefined){ atual='cidades'; out.cidades=l.replace(/^[^:=]*[:=]\s*/,''); ordem.push('cidades'); } else atual=null; }
+    else if(atual && atual!=='cidades' && /^[A-Za-zÀ-ÿ0-9]/.test(l) && (out[atual]||'').length<200) out[atual]+=' '+l; });
+  return out;
+}
+/* ---- cidades ---- */
+const PARTICULAS = ['de','da','do','das','dos','e'];
+function acharCidadeRef(nome){
+  const f=norm(nome).replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim(); if(!f) return null;
+  let best=null;
+  CIDADES_REF.forEach(c=>{ const g=norm(c[0]); const d=lev(f,g); const lim=g.length>=9?2:(g.length>=5?1:0);
+    if(d<=lim && (!best||d<best.d)) best={d,c}; });
+  return best?best.c:null;
+}
+const PALAVRAS_DE_ROTULO=new Set(['afetadas','afetada','localidades','localidade','impacto','cluster','elemento','tecnologia','total','clientes','movel','descricao','status','equipamentos','estacoes','responsavel','servicos','previsao','criterio','rede','redes','evento','operadora','bilhetes','causa','principais','tipo','cnl','falha']);
+function plausivel(n,ocr){
+  const f=norm(n).replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim(); if(f.length<3||f.length>40||!/[aeiou]/.test(f)) return false;
+  const t=f.split(' '); if(t.length>5||t.some(w=>PALAVRAS_DE_ROTULO.has(w))) return false;
+  if(t.some(w=>w.length>3&&!/[aeiou]/.test(w))) return false;                  // palavra sem vogal = lixo de OCR
+  const letras=(n.match(/[A-Za-zÀ-ÿ]/g)||[]).length; if(letras/n.replace(/\s/g,'').length<0.85) return false;
+  if(ocr){   // vindo de OCR: o campo da MEG é sempre em MAIÚSCULAS; lixo costuma vir misturado e sem cara de palavra
+    const up=(n.match(/[A-ZÀ-Ý]/g)||[]).length; if(up/letras<0.8) return false;
+    return t.filter(w=>!PARTICULAS.includes(w)).every(w=>{ const v=(w.match(/[aeiou]/g)||[]).length/w.length; return w.length>=3&&v>=0.2&&v<=0.7&&!/[^aeiou]{5}/.test(w)&&!/(.)\1\1/.test(w); });
+  }
+  return true;
+}
+function limparCidades(raw,ocr){
+  const ufs=[], cidades=[];
+  let t=String(raw||'').replace(/[|_\[\]{}()<>~^`"“”*#@=\\]/g,' ').replace(/[0-9]/g,' ').replace(/\s+/g,' ').trim();
+  t=t.split(/\s*(?:[,;\/\n]|\s+e\s+)\s*/i).map(s=>s.trim()).filter(Boolean);
+  t.forEach(piece=>{
+    let uf=null; const m=piece.match(/^(.*?)\s*[-–]\s*([A-Za-z]{2})$/);
+    if(m && UF_REGIONAL[m[2].toUpperCase()]){ piece=m[1]; uf=m[2].toUpperCase(); }
+    piece=piece.replace(/^[\s\-–.]+|[\s\-–.]+$/g,'');
+    let toks=piece.split(/\s+/).filter(w=>w && (w.length>2 || PARTICULAS.includes(w.toLowerCase())) && !/^(.)\1{2,}$/.test(w) && !/^(afetad|impact|local|estac)/i.test(norm(w)));
+    while(toks.length && PARTICULAS.includes(toks[toks.length-1].toLowerCase())) toks.pop();
+    const nome=toks.join(' '); if(nome.length<3) return;
+    const ref=acharCidadeRef(nome); if(!ref&&!plausivel(nome,ocr)) return;
+    const final=ref?ref[0]:toTitleCase(nome);
+    if(!cidades.includes(final)){ cidades.push(final); if(uf) ufs.push(uf); else if(ref) ufs.push(ref[1]); }
+  });
+  return {cidades, ufs:[...new Set(ufs)]};
+}
+/* ---- regional: 1) caixa "Local da Falha" 2) UF 3) DDD 4) "Ger.Operações XX" ---- */
+function resolverRegional({boxReg,ufs,ddds,gerOp}){
+  const cand=[]; const avisos=[];
+  const porUF=[...new Set((ufs||[]).map(u=>UF_REGIONAL[u]).filter(Boolean))];
+  const porDDD=[...new Set((ddds||[]).map(d=>DDD_DIGITO_REGIONAL[d[0]]).filter(Boolean))];
+  if(boxReg) cand.push(['ok',boxReg,'Local da Falha']);
+  if(porUF.length===1) cand.push(['ok',porUF[0],'UF']);
+  if(porDDD.length===1) cand.push(['inf',porDDD[0],'DDD']);
+  if(gerOp) cand.push(['inf',gerOp,'Responsável pela Recuperação']);
+  if(!cand.length){ if(porUF.length>1) avisos.push('UFs de regionais diferentes ('+porUF.join(', ')+'): escolha a regional'); return {value:null,src:null,avisos}; }
+  const [st,val]=cand[0];
+  cand.slice(1).forEach(c=>{ if(c[1]!==val) avisos.push(`Regional ${val} difere de ${c[1]} (${c[2]})`); });
+  return {value:val,src:st,avisos};
+}
+const TECNOLOGIAS = {'2345':'2G, 3G, 4G e 5G','234':'2G, 3G e 4G','23':'2G e 3G','24':'2G e 4G','34':'3G e 4G','5':'5G','4':'4G','3':'3G','2':'2G'};
+function interpretar(texto,opts){ opts=opts||{};
+  const seg=segmentar(texto), all=norm(texto), f={falha:null,servicos:null,tecnologia:null,regional:null,chamado:[],data:null,hora:null,cidade:null,ufs:[],ddds:[],impacto:null,meg:null}, src={}, avisos=[];
+  const g=k=>seg[k]||'';
+  // nº do MEG (cabeçalho)
+  const mn=String(texto).match(/(\d{3,6})\s*\/\s*(20\d{2})/); if(mn) f.meg={numero:mn[1]+'/'+mn[2]};
+  // FALHA: evento > status > descrição
+  const ev=norm(g('evento')).replace(/falha\W*$/,'');
+  const fonte=[ev, norm(g('status')), norm(g('descricao')), norm(g('criterio'))];
+  for(let i=0;i<fonte.length && !f.falha;i++){
+    if(/degrad|lentid|instabil/.test(fonte[i])){ f.falha='Degradação'; src.falha=i<2?'ok':'inf'; }
+    else if(/interrup|indisponib|fora do ar/.test(fonte[i])){ f.falha='Interrupção'; src.falha=i<2?'ok':'inf'; }
+  }
+  // SERVIÇOS
+  const rd=norm([ev,g('redes'),g('servicos')].join(' ')); let inf=false, e=rd;
+  if(!/\b(voz|dados|data|internet)\b/.test(e)){ e=all; inf=true; }
+  const voz=/\bvoz\b/.test(e), dad=/\b(dados?|data|internet)\b/.test(e);
+  f.servicos=voz&&dad?'Voz/Dados':voz?'Voz':dad?'Dados':null; if(f.servicos) src.servicos=inf?'inf':'ok';
+  // TECNOLOGIA
+  const th=new Set(); for(const m of all.matchAll(/(?<![a-z0-9])([2-5])\s?g(?![a-z0-9])/g)) th.add(m[1]);
+  if(/\blte\b/.test(all)) th.add('4'); if(/umts|wcdma/.test(all)) th.add('3'); if(/\bgsm\b/.test(all)) th.add('2');
+  const tk=[...th].sort().join(''); if(TECNOLOGIAS[tk]){ f.tecnologia=TECNOLOGIAS[tk]; src.tecnologia='ok'; }
+  // CHAMADO
+  const incs=[]; for(const m of String(texto).matchAll(/\bINC\W{0,2}([0-9OoIlSB]{6,})/gi)){
+    const d=m[1].replace(/[Oo]/g,'0').replace(/[Il]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(CONFIG.CHAMADO_REMOVER_ZEROS?/^0+/:/^$/,'');
+    if(d&&!incs.includes(d)) incs.push(d); }
+  if(incs.length){ f.chamado=incs; src.chamado='ok'; }
+  // DATA / HORA (cada parte é lida de forma independente; descrição "(30/10 10:40)" serve de reserva)
+  const okD=(d,m)=>+m>=1&&+m<=12&&+d>=1&&+d<=31, ini=g('inicio'), anoIni=(ini.match(/(20\d{2})/)||[])[1];
+  const reDH=/(\d{2})\s*[\/.\-]\s*(\d{2})\s*[\/.\-]\s*(20\d{2})\D{0,3}(\d{1,2})\s*[:.hH]\s*(\d{2})/;
+  const dm=ini.match(reDH)||String(texto).match(reDH);
+  if(dm && okD(dm[1],dm[2])&&+dm[4]<=23&&+dm[5]<=59){ f.data=`${dm[3]}-${dm[2]}-${dm[1]}`; f.hora=pad2(dm[4])+':'+dm[5]; src.data=src.hora='ok'; }
+  else {
+    const hm=ini.match(/(?<!\d)([01]?\d|2[0-3])\s*:\s*([0-5]\d)(?!\d)/); if(hm){ f.hora=pad2(hm[1])+':'+hm[2]; src.hora='ok'; }
+    const dd2=ini.match(/(?<!\d)(\d{2})\s*\/\s*(\d{2})\s*\/\s*(20\d{2})/);
+    if(dd2&&okD(dd2[1],dd2[2])){ f.data=`${dd2[3]}-${dd2[2]}-${dd2[1]}`; src.data='ok'; }
+    else { const ds=g('descricao').match(/\(\s*(\d{2})\s*\/\s*(\d{2})\s+(\d{1,2})\s*[:.]\s*(\d{2})\s*\)/);
+      if(ds&&okD(ds[1],ds[2])){ f.data=`${anoIni||new Date().getFullYear()}-${ds[2]}-${ds[1]}`; src.data='inf'; if(!f.hora){ f.hora=pad2(ds[3])+':'+ds[4]; src.hora='inf'; } } }
+  }
+  if(f.chamado.length||f.data) avisos.push('confira chamado, data e hora: números são o que o OCR mais erra');
+  // LOCAL DA FALHA / CLUSTER: duas caixas (UF e regional) e, no layout novo, a cidade logo depois: "MG MG PATOS DE MINAS"
+  const locRaw=(g('local')||g('cluster')).replace(/esta\S*\s*afet.*$/i,'');
+  const rawToks=locRaw.split(/\s+/).filter(Boolean), head=rawToks.slice(0,4).map(x=>x.toUpperCase().replace(/[^A-Z\/]/g,''));
+  let last=-1; head.forEach((x,i)=>{ if(UF_REGIONAL[x]||REGIONAIS.includes(x)) last=i; });
+  const bt=head.slice(0,last+1), restoCluster=rawToks.slice(last+1).join(' ');
+  const ufs=[]; bt.forEach(x=>{ if(UF_REGIONAL[x]&&!ufs.includes(x)) ufs.push(x); });
+  const regs=bt.filter(x=>REGIONAIS.includes(x)); let boxReg=regs.length?regs[regs.length-1]:null; if(regs.length===1&&bt.length===1) boxReg=null;
+  if(ufs.length){ f.ufs=ufs; src.ufs='ok'; }
+  // CIDADE: 1) "Principais Localidades Afetadas"  2) texto logo após o Cluster  3) tabela de localidades. Tudo validado; duvidoso = vazio.
+  const tab=[]; String(texto).split(/\r?\n/).forEach(l=>{ const m=l.match(/\b(?:MOVEL|M[ÓO]VEL|FIXA|FIXO)\b\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ \-']{2,40}?)\s+([A-Z]{2})\s+[A-Z0-9]{2,5}\s+\d+/); if(m&&UF_REGIONAL[m[2]]) tab.push(m[1].trim()+' - '+m[2]); });
+  let lc={cidades:[],ufs:[]}, origemCid=null;
+  [[g('cidades'),'ok'],[restoCluster,'ok'],[tab.join(', '),'inf']].some(([txt,st])=>{ const r=limparCidades(txt,opts.ocr); if(r.cidades.length){ lc=r; origemCid=st; return true; } return false; });
+  if(lc.cidades.length){ f.cidade=lc.cidades.join(', '); src.cidade=origemCid; } else avisos.push('cidade não identificada no print: preencha manualmente');
+  if(!f.ufs.length && lc.ufs.length){ f.ufs=lc.ufs; src.ufs='inf'; }
+  // DDD: SEMPRE a partir da(s) cidade(s) de "Principais Localidades Afetadas" (nunca do texto do Impacto)
+  if(f.cidade){ const rs=f.cidade.split(', ').map(c=>acharCidadeRef(c)), ds=rs.map(r=>r&&r[2]).filter(Boolean);
+    if(ds.length){ f.ddds=[...new Set(ds)]; src.ddds='ok'; if(ds.length<rs.length) avisos.push('DDD só de parte das cidades: complete o que faltar'); } else avisos.push('DDD da cidade não encontrado: selecione manualmente'); }
+  // REGIONAL
+  const mg=norm(g('resp')).match(/ger\.?\s*opera\w*\s+([a-z]{2}(?:\s*\/\s*[a-z]{2})?)/); const gerOp=mg?mg[1].replace(/\s+/g,'').toUpperCase():null;
+  const rr=resolverRegional({boxReg:REGIONAIS.includes(boxReg)?boxReg:null,ufs:f.ufs,ddds:f.ddds,gerOp:REGIONAIS.includes(gerOp)?gerOp:null});
+  if(rr.value){ f.regional=rr.value; src.regional=rr.src; } avisos.push(...rr.avisos);
+  // IMPACTO (N1/N2/N3)
+  let ni=(g('dist').match(/(?<![A-Za-z0-9])N\s?([123])(?![A-Za-z0-9])/i)||[])[1], niSt='ok';
+  if(!ni){ const ls=[...String(texto).matchAll(/(?<![A-Za-z0-9])N([123])\s+(?:EMP|PES|RES|MOVEL|M[ÓO]VEL|FIXA|FIXO|MASS)\b/gi)].map(m=>m[1]);   // lista sem o rótulo legível
+    if(ls.length){ ni=ls[0]; niSt='inf'; if(new Set(ls).size>1) avisos.push('IMPACTO: níveis diferentes na lista de distribuição ('+[...new Set(ls)].map(x=>'N'+x).join(', ')+')'); } }
+  if(ni){ f.impacto='N'+ni; src.impacto=niSt; }
+  return {fields:f,src,avisos};
+}
+function pontuar(r){ return Object.values(r.src).reduce((a,v)=>a+(v==='ok'?2:1),0); }
+/* Une vários resultados (várias versões da imagem OU várias imagens do mesmo pedido). */
+function mesclar(lista,multi){
+  const out={fields:{falha:null,servicos:null,tecnologia:null,regional:null,chamado:[],data:null,hora:null,cidade:null,ufs:[],ddds:[],impacto:null,meg:null},src:{},avisos:[]};
+  const ord=[...lista].sort((a,b)=>pontuar(b)-pontuar(a));
+  const uniq=(a,b)=>[...new Set([...a,...b])];
+  ord.forEach(r=>{
+    Object.keys(out.fields).forEach(k=>{ const v=r.fields[k], cur=out.fields[k];
+      if(Array.isArray(cur)){ if(v&&v.length&&(multi||!cur.length)){ out.fields[k]=uniq(cur,v); if(!out.src[k]||r.src[k]==='ok') out.src[k]=r.src[k]||out.src[k]; } }
+      else if(k==='cidade' && v && cur && multi){ out.fields[k]=uniq(cur.split(', '),v.split(', ')).join(', '); }
+      else if(v!=null && cur==null){ out.fields[k]=v; if(r.src[k]) out.src[k]=r.src[k]; }
+      else if(v!=null && cur!=null && ['falha','servicos','regional','data','hora','impacto'].includes(k) && v!==cur && multi) out.avisos.push(`${k}: valores diferentes entre leituras (${cur} x ${v})`);
+    }); (multi||r===ord[0]) && r.avisos.forEach(a=>out.avisos.push(a)); });
+  out.avisos=[...new Set(out.avisos)];
+  if(out.fields.cidade){ const l=limparCidades(out.fields.cidade); out.fields.cidade=l.cidades.join(', '); }
+  return out;
+}
+/* ================= Tratamento da imagem antes do OCR ================= */
+function otsu(arr){ const h=new Array(256).fill(0); arr.forEach?0:0; for(let i=0;i<arr.length;i++) h[arr[i]]++;
+  const tot=arr.length; let s=0; for(let i=0;i<256;i++) s+=i*h[i]; let wB=0,sB=0,best=-1,thr=128;
+  for(let t=0;t<256;t++){ wB+=h[t]; if(!wB) continue; const wF=tot-wB; if(!wF) break; sB+=t*h[t]; const d=sB/wB-(s-sB)/wF, v=wB*wF*d*d; if(v>best){best=v;thr=t;} } return thr; }
+function niveis(g){ const h=new Array(256).fill(0); for(let i=0;i<g.length;i++) h[g[i]]++; const n=g.length; let a=0,lo=0,hi=255;
+  for(let i=0;i<256;i++){ a+=h[i]; if(a>=n*0.01){lo=i;break;} } a=0; for(let i=255;i>=0;i--){ a+=h[i]; if(a>=n*0.005){hi=i;break;} }
+  const k=255/Math.max(hi-lo,1); for(let i=0;i<g.length;i++) g[i]=Math.max(0,Math.min(255,(g[i]-lo)*k)); }
+function apagarBordas(g,w,h,esc){ // remove as molduras retas dos campos (atrapalham o OCR) sem tocar nas letras
+  const ink=new Uint8Array(w*h), t=otsu(g); for(let i=0;i<g.length;i++) ink[i]=g[i]<t?1:0;
+  const kill=new Uint8Array(w*h), minH=Math.round(30*esc), minV=Math.round(14*esc);
+  for(let y=0;y<h;y++){ let x=0; while(x<w){ if(ink[y*w+x]){ let x2=x; while(x2<w&&ink[y*w+x2]) x2++; if(x2-x>=minH) for(let k=x;k<x2;k++) kill[y*w+k]=1; x=x2; } else x++; } }
+  for(let x=0;x<w;x++){ let y=0; while(y<h){ if(ink[y*w+x]){ let y2=y; while(y2<h&&ink[y2*w+x]) y2++; if(y2-y>=minV) for(let k=y;k<y2;k++) kill[k*w+x]=1; y=y2; } else y++; } }
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){ const i=y*w+x; if(kill[i]||kill[i-1]||kill[i+1]||kill[i-w]||kill[i+w]) g[i]=255; }
+}
+function nitidez(g,w,h){ const o=new Float32Array(g.length); // máscara de nitidez 3x3
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){ const i=y*w+x; o[i]=Math.max(0,Math.min(255,5*g[i]-g[i-1]-g[i+1]-g[i-w]-g[i+w])); }
+  for(let i=0;i<g.length;i++) if(o[i]||g[i]===0) g[i]=o[i]; }
+/* Gera 2 versões: A = ampliada + contraste + sem bordas + nitidez | B = A em preto e branco (Otsu) */
+function prepararVariantes(bmp){
+  const W=bmp.width, esc=Math.max(1,Math.min(4,2600/W)), w=Math.round(W*esc), h=Math.round(bmp.height*esc);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingQuality='high'; x.drawImage(bmp,0,0,w,h);
+  const d=x.getImageData(0,0,w,h), g=new Uint8ClampedArray(w*h);
+  for(let i=0,j=0;i<d.data.length;i+=4,j++){ const a=d.data[i+3]/255; g[j]=(0.299*d.data[i]+0.587*d.data[i+1]+0.114*d.data[i+2])*a+255*(1-a); }
+  niveis(g); apagarBordas(g,w,h,esc); nitidez(g,w,h);
+  const mk=(arr)=>{ const cv=document.createElement('canvas'); cv.width=w+48; cv.height=h+48; const cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+    const im=cx.createImageData(w,h); for(let i=0;i<arr.length;i++){ im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=arr[i]; im.data[i*4+3]=255; } cx.putImageData(im,24,24); return cv; };
+  const A=mk(g), t=otsu(g), b=new Uint8ClampedArray(g.length); for(let i=0;i<g.length;i++) b[i]=g[i]>t?255:0;
+  return [{nome:'A',cv:A},{nome:'B',cv:mk(b)}];
+}
+/* ================= OCR + várias imagens ================= */
+let workerP=null, busy=false, seq=0; const entradas=[]; // {id,tipo:'img'|'texto',file,url,status,texto,res,erro}
+function carregarTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  return new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=CONFIG.OCR.scriptUrl; s.onload=ok; s.onerror=()=>no(new Error('Não foi possível carregar o leitor de imagem (sem acesso à CDN).')); document.head.appendChild(s); });
+}
+function getWorker(){
+  if(!workerP) workerP=(async()=>{ await carregarTesseract(); const o={}; ['workerPath','corePath','langPath'].forEach(k=>{ if(CONFIG.OCR[k]) o[k]=CONFIG.OCR[k]; });
+    return Tesseract.createWorker(CONFIG.OCR.lang,1,o); })().catch(e=>{ workerP=null; throw e; });
+  return workerP;
+}
+/* 2ª passada só nas linhas com números (Bilhetes / Início): recorta a linha e lê só dígitos, que o OCR geral costuma errar em fonte pequena */
+async function refinarDigitos(w,cv,data,psmVolta){
+  let out='';
+  try{
+    for(const ln of (data.lines||[])){
+      const r=detectarRotulo(ln.text||''), inc=/\bINC/i.test(ln.text||''); const k=r&&r.k; if(!(k==='bilhetes'||k==='inicio'||inc)) continue;
+      const b=ln.bbox; if(!b) continue; const pad=6, x0=Math.max(0,b.x0-pad), y0=Math.max(0,b.y0-pad), ww=Math.min(cv.width-x0,b.x1-b.x0+2*pad), hh=Math.min(cv.height-y0,b.y1-b.y0+2*pad);
+      const sc=Math.max(1,Math.min(3,80/hh)), c=document.createElement('canvas'); c.width=Math.round(ww*sc)+40; c.height=Math.round(hh*sc)+40; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(cv,x0,y0,ww,hh,20,20,Math.round(ww*sc),Math.round(hh*sc));
+      await w.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:(k==='inicio'?'0123456789/:. -a':k==='cidades'?'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz:-, ':'INC0123456789 -')});
+      const t=((await w.recognize(c)).data.text||'').trim(); if(t&&k==='cidades'){ const v=t.slice(t.lastIndexOf(':')+1).trim(); if(v.length>=3) out+='Principais Localidades Afetadas : '+v+'\n'; } else if(t) out+=(k==='inicio'?'Inicio / Termino : ':'Bilhetes : ')+t+'\n';
+    }
+  }catch(e){ console.warn('refino numérico ignorado:',e); }
+  finally{ try{ await w.setParameters({tessedit_pageseg_mode:psmVolta,tessedit_char_whitelist:''}); }catch(e){} }
+  return out;
+}
+async function lerUma(e){
+  const bmp=await createImageBitmap(e.file), vars=prepararVariantes(bmp), w=await getWorker(), rs=[], textos=[];
+  const plano=[[0,'6'],[1,'6'],[0,'4']];
+  for(const [i,psm] of plano){
+    await w.setParameters({tessedit_pageseg_mode:psm,preserve_interword_spaces:'1'});
+    const {data}=await w.recognize(vars[i].cv); const extra=await refinarDigitos(w,vars[i].cv,data,psm); const tx=extra+data.text; textos.push(tx); rs.push(interpretar(tx,{ocr:true}));
+    if(Math.max(...rs.map(pontuar))>=20) break;            // leitura já está completa
+  }
+  e.texto=textos.join('\n\n----\n\n'); e.res=mesclar(rs,false);
+}
+function atualizarThumbs(){
+  const box=$('thumbs'); box.innerHTML='';
+  entradas.filter(e=>e.tipo==='img').forEach(e=>{
+    const d=document.createElement('div'); d.className='thumb-i';
+    const st=e.status==='lendo'?'lendo…':e.status==='erro'?'erro':e.status==='ok'?'lida':'na fila';
+    d.innerHTML=`<img src="${e.url}" alt="print"/><div class="tn"><span>${esc(e.file.name||'print colado')}</span><b class="${e.status}">${st}</b></div><button type="button" class="mini rm" data-id="${e.id}" aria-label="Remover imagem">×</button>`;
+    box.appendChild(d); });
+  box.querySelectorAll('.rm').forEach(b=>b.addEventListener('click',()=>{ if(busy) return toast('Aguarde a leitura terminar'); const i=entradas.findIndex(x=>x.id==b.dataset.id); if(i>=0){ URL.revokeObjectURL(entradas[i].url||''); entradas.splice(i,1); } atualizarThumbs(); consolidar(); }));
+}
+function status(html,show=true){ const s=$('imp-status'); s.innerHTML=html; s.style.display=show?'block':'none'; }
+function statusHTML(m,n){
+  const f=m.fields, ch=(ok,t)=>`<span class="chip ${ok?'ok':'miss'}">${esc(t)}</span>`, c=[];
+  [['Falha',f.falha],['Serviços',f.servicos],['Tecnologia',f.tecnologia],['Regional',f.regional],['Chamado',f.chamado.length],['Data',f.data],['Hora',f.hora],['Cidade',f.cidade],['UF',f.ufs.length],['DDD',f.ddds.length],['Impacto',f.impacto]]
+    .forEach(([k,v])=>c.push(ch(!!v,v?k:k+': preencher')));
+  return (f.meg?`<div style="margin-bottom:6px"><strong>MEG ${esc(f.meg.numero)}</strong> · ${n} imagem(ns)</div>`:`<div style="margin-bottom:6px">${n} imagem(ns) lida(s)</div>`)+c.join('')+
+    (m.avisos.length?`<div class="hint" style="color:#9a5b00">Atenção: ${m.avisos.map(esc).join(' · ')}</div>`:'')+
+    `<div class="hint">Confira os campos destacados antes de clicar em Gerar. Verde = lido do pedido; laranja = não identificado ou sugestão.</div>`;
+}
+async function consolidar(){
+  const ok=entradas.filter(e=>e.res);
+  $('megTexto').value=ok.map(e=>e.texto).join('\n\n=====\n\n');
+  if(!ok.length){ if(!entradas.length) status('',false); return; }
+  const m=mesclar(ok.map(e=>e.res),ok.length>1); const r=await aplicar(m,ok.some(e=>e.tipo==='img')?'ocr':'texto');
+  status(statusHTML(m,ok.length)); if(r.ach.length<3) status(statusHTML(m,ok.length)+'<div class="hint" style="color:#9a5b00">Poucos campos foram lidos. Tente um print mais nítido ou corrija o texto em “ver texto lido”.</div>');
+}
+async function adicionarArquivos(files){
+  if(busy) return toast('Aguarde a leitura atual terminar');
+  const novos=[...files].filter(f=>f&&f.type.startsWith('image/'));
+  if(!novos.length) return toast('Envie imagens (.png, .jpg ou .webp)');
+  if(novos.some(f=>f.size>15*1024*1024)) toast('Imagens acima de 15 MB foram ignoradas');
+  novos.filter(f=>f.size<=15*1024*1024).slice(0,10).forEach(f=>entradas.push({id:++seq,tipo:'img',file:f,url:URL.createObjectURL(f),status:'fila'}));
+  atualizarThumbs(); busy=true;
+  try{
+    for(const e of entradas.filter(x=>x.tipo==='img'&&x.status==='fila')){
+      e.status='lendo'; atualizarThumbs(); status(`Lendo imagem ${entradas.indexOf(e)+1} de ${entradas.filter(x=>x.tipo==='img').length}… tratando a imagem e reconhecendo o texto (pode levar alguns segundos)`);
+      try{ await lerUma(e); e.status='ok'; }catch(err){ console.error(err); e.status='erro'; e.erro=err.message; if(/CDN|carregar o leitor/.test(err.message)) throw err; }
+      atualizarThumbs();
+    }
+    await consolidar();
+    if(entradas.some(x=>x.status==='erro')) toast('Uma ou mais imagens não puderam ser lidas');
+  }catch(e){ status(`<span style="color:#b91c1c">${esc(e.message||'Falha ao ler a imagem.')} Cole o texto do MEG em “Colar texto do MEG” ou preencha manualmente.</span>`); }
+  finally{ busy=false; atualizarThumbs(); }
+}
+async function importarTexto(txt){
+  if(!txt.trim()) return toast('Cole o texto do MEG primeiro');
+  for(let i=entradas.length-1;i>=0;i--) if(entradas[i].tipo==='texto') entradas.splice(i,1);
+  entradas.push({id:++seq,tipo:'texto',status:'ok',texto:txt,res:interpretar(txt)}); await consolidar();
+}
+function limparImagens(){ entradas.forEach(e=>e.url&&URL.revokeObjectURL(e.url)); entradas.length=0; atualizarThumbs(); }
+
+/* ================= Aplicar no formulário ================= */
+function marcar(id,st){ const el=$(id); el.classList.remove('auto-ok','auto-miss'); el.classList.add(st==='ok'?'auto-ok':'auto-miss'); }
+async function aplicar(m,origem){
+  const f=m.fields, s=m.src, ach=[], falt=[];
+  const sel=(id,val,nome)=>{ const el=$(id), op=val&&[...el.options].find(o=>o.text===val); if(op){ el.value=op.value; marcar(id,s[id]||'ok'); ach.push(nome); } else { el.value=''; marcar(id,'miss'); falt.push(nome); } };
+  const txt=(id,val,nome,k)=>{ if(val){ $(id).value=val; marcar(id,s[k||id]||'ok'); ach.push(nome); } else { $(id).value=''; marcar(id,'miss'); falt.push(nome); } };
+  sel('falha',f.falha,'Falha'); sel('servicos',f.servicos,'Serviços'); sel('tecnologia',f.tecnologia,'Tecnologia'); sel('regional',f.regional,'Regional');
+  txt('chamado',f.chamado.join(', '),'Chamado'); txt('data',f.data,'Data'); txt('hora',f.hora,'Hora'); txt('cidade',f.cidade,'Cidade'); sel('impacto',f.impacto,'Impacto');
+  [['uf',f.ufs,'UF'],['ddd',f.ddds,'DDD']].forEach(([k,v,n])=>{ multi[k].set(v||[]); multi[k].toggle.classList.remove('auto-ok','auto-miss'); multi[k].toggle.classList.add(v&&v.length&&(s[k+'s']||'ok')==='ok'?'auto-ok':'auto-miss'); (v&&v.length?ach:falt).push(n); });
+  state.meg=f.meg||null; state.origem=origem; mostrarHintRegional();
+  if(DataLayer.on()&&f.cidade){ try{ const d=await DataLayer.buscarCidade(f.cidade.split(',')[0]);
+    if(d){ if(!f.ufs.length&&d.uf) multi.uf.set([d.uf]); if(!f.ddds.length&&d.ddds) multi.ddd.set(d.ddds); if(!f.regional&&d.regional) $('regional').value=d.regional; } }catch(e){ console.warn('[DB]',e); } }
+  return {ach,falt};
+}
+/* ================= Regional: sugestão e conferência ================= */
+function mostrarHintRegional(){
+  const r=$('regional').value, h=$('regHint'); if(!h) return;
+  if(!r){ h.textContent=''; return; }
+  h.textContent=r==='NACIONAL'?'Todas as regionais':(REGIONAL_UFS[r]||[]).map(u=>mapUFsToNames([u])[0]).join(', ')+(r==='SP'?' · DDD 11 (Grande SP) e demais DDDs do estado':'');
+}
+function sugerirRegionalPorUF(){
+  const rs=[...new Set(multi.uf.get().map(u=>UF_REGIONAL[u]).filter(Boolean))], el=$('regional');
+  if(rs.length===1 && !el.value){ el.value=rs[0]; marcar('regional','inf'); mostrarHintRegional(); }
+}
+function conferirRegional(v){
+  const av=[]; const reg=v.regional;
+  if(reg&&reg!=='NACIONAL'){
+    const fora=v.ufSelected.filter(u=>UF_REGIONAL[u]&&UF_REGIONAL[u]!==reg); if(fora.length) av.push(`UF ${fora.join(', ')} não pertence(m) à regional ${reg}`);
+    const dfora=v.dddSelected.filter(d=>DDD_DIGITO_REGIONAL[d[0]]!==reg); if(dfora.length) av.push(`DDD ${dfora.join(', ')} não pertence(m) à regional ${reg}`);
+  }
+  const box=$('erros'); if(av.length){ box.className='aviso'; box.innerHTML='<strong>Confira (não impede de gerar):</strong><br>'+av.map(esc).join('<br>'); box.style.display='block'; } 
+}
+$('regional').addEventListener('change',mostrarHintRegional);
+$('ufList').addEventListener('change',sugerirRegionalPorUF); $('ufApply').addEventListener('click',sugerirRegionalPorUF);
+
+/* ================= Eventos do upload ================= */
+const drop=$('drop'), inp=$('arquivo');
+drop.addEventListener('click',()=>inp.click());
+drop.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inp.click(); } });
+inp.addEventListener('change',()=>{ const fs=[...inp.files]; inp.value=''; adicionarArquivos(fs); });
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop',e=>adicionarArquivos(e.dataTransfer.files));
+$('btnTexto').addEventListener('click',()=>importarTexto($('megTexto').value));
+$('btnLimparImgs').addEventListener('click',()=>{ if(busy) return toast('Aguarde a leitura terminar'); limparImagens(); $('megTexto').value=''; status('',false); });
+document.addEventListener('paste',e=>{
+  const its=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/')); if(!its.length) return;
+  e.preventDefault(); adicionarArquivos(its.map(i=>i.getAsFile()));
+});
+</script>
+</body>
+</html>
